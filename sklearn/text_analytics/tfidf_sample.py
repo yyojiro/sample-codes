@@ -64,7 +64,6 @@ from sklearn import metrics
 print(metrics.classification_report(test_target, y_predicted,
                                     target_names=dataset.target_names))
 
-
 ##################################################
 # 分類器たちを比較する
 # デフォルト設定でどこまでの成績を出せるのか
