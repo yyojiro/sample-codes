@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#
+# openjtalkでしゃべらせるスクリプト
+# /usr/local/bin/とかに置く
+#
+
+readonly MESSAGE=$@
+
+if [ -z "$MESSAGE" ]
+then
+        echo "usage: $(basename `readlink -f $0`) MESSAGE" >&2
+        exit 1
+fi
+
+VOICE=/usr/share/hts-voice/htsvoice-tohoku-f01/tohoku-f01-neutral.htsvoice
+DICTIONARY=/var/lib/mecab/dic/open-jtalk/naist-jdic/
+
+echo "$MESSAGE" | open_jtalk -x $DICTIONARY -m $VOICE -r 1.0 -ow /dev/stdout | aplay --quiet
