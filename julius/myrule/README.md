@@ -9,9 +9,10 @@
 
 ## 文法編集
 
-mytest.yomiファイルとmytest.grammarファイルを編集する。
+まず文法の名前を決める。サンプルではmytestとしている。
+.yomiファイルと.grammarファイルを編集する。
 
-* ここ嫁　http://julius.osdn.jp/juliusbook/ja/desc_lm.html#id2537489
+* 詳しくはここ　http://julius.osdn.jp/juliusbook/ja/desc_lm.html#id2537489
 
 ## ビルド
 
@@ -19,7 +20,7 @@ julius grammar-kitが必要。
 
 ```
 $ git clone https://github.com/julius-speech/grammar-kit.git
-$ ./build.sh
+$ ./build.sh mytest
 ```
 
 ## 起動
