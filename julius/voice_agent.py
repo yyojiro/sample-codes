@@ -20,9 +20,7 @@ import socket
 from xml.etree.ElementTree import *
 import subprocess
 import datetime
-
-host = '127.0.0.1'
-port = 10500
+import time
 
 
 def say(message):
@@ -69,27 +67,55 @@ def process(elem):
             say_time()
 
 
-def main():
+def wait_for_message(client):
+    data = ''
+    while True:
+        # RECOGOUTタグが認識した結果を意味する
+        if '</RECOGOUT>\n.' in data:
+            print data
+            # \n.が区切りになっているので、splitで切って必要な分にする
+            elem = fromstring('<?xml version="1.0"?>\n' + data[data.find('<RECOGOUT>'):].split('\n.')[0])
+            # 処理する
+            process(elem)
+            # リセット
+            data = ''
+        else:
+            byte_data = client.recv(1024)
+            if byte_data == '':
+                # 相手が切れるとrecvから0byteが返ってくるので、ここで例外にする
+                raise socket.error()
+            data += str(byte_data)
+            print('wait')
+
+
+def connect_julius():
     # juliusはデフォルトtcp:10500で待っている
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((host, port))
+    host = '127.0.0.1'
+    port = 10500
+    while True:
+        try:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect((host, port))
+            say(u'Juliusと接続しました')
+            return client
+        except socket.error:
+            print "can not get connection. try reconnect."
+            time.sleep(3)
+
+
+def main():
     say(u'起動します')
-    try:
-        data = ''
-        while 1:
-            # RECOGOUTタグが認識した結果を意味する
-            if '</RECOGOUT>\n.' in data:
-                print data
-                # \n.が区切りになっているので、splitで切って必要な分にする
-                elem = fromstring('<?xml version="1.0"?>\n' + data[data.find('<RECOGOUT>'):].split('\n.')[0])
-                process(elem)
-                # リセット
-                data = ''
-            else:
-                data += str(client.recv(1024))
-                print('wait')
-    except KeyboardInterrupt:
-        client.close()
+    client = connect_julius()
+    while True:
+        try:
+            wait_for_message(client)
+        except socket.error:
+            say(u'Juliusとの接続が切れました')
+            print "server socket closed. try reconnect."
+            client = connect_julius()
+        except KeyboardInterrupt:
+            client.close()
+            return
 
 
 if __name__ == "__main__":

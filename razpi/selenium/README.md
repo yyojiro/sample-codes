@@ -27,8 +27,6 @@ root@raspberrypi:~# pip install selenium
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
- 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
   
