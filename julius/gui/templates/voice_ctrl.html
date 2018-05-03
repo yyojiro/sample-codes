@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link rel="stylesheet" type="text/css"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script type="text/javascript"
+            src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <title>TTS音声チューニング</title>
+</head>
+<body>
+
+<h1>open_jtalkの音声パラメータ調整用</h1>
+<div class="container">
+    <div id="main_panel">
+        <form class=”form-group>
+            <div class="row">
+                <label for="message">セリフ</label>
+                <input class="form-control" id="message" name="message" type="text" width="50" value="テスト"/>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">
+                    <label for="param_s">sampling frequency</label>
+                </div>
+                <div class="col-sm-2">
+                    <input class="form-control" id="param_s" type="number" name="" value="50000" min="1" max="1000000" step="1000">
+                </div>
+                <div class="col-sm-3">
+                    <label for="param_p">frame period (point) </label>
+                </div>
+                <div class="col-sm-2">
+                    <input class="form-control" id="param_p" type="number" name="" value="200" min="1" max="1000" step="10">
+                </div>
+                <div class="col-sm-3">
+                    <label for="param_a">all-pass constant </label>
+                </div>
+                <div class="col-sm-2">
+                    <input class="form-control" id="param_a" type="number" name="" value="0.55" min="0.0" max="1.0" step="0.01">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">
+                    <label for="param_b">postfiltering coefficient </label>
+                </div>
+                <div class="col-sm-1">
+                    <input class="form-control" id="param_b" type="number" name="" value="0.0" min="0.0" max="1.0" step="0.1">
+                </div>
+                <div class="col-sm-3">
+                    <label for="param_r">speech speed rate</label>
+                </div>
+                <div class="col-sm-1">
+                    <input class="form-control" id="param_r" type="number" name="" value="1.0" min="0.0" max="10.0" step="0.1">
+                </div>
+                <div class="col-sm-3">
+                    <label for="param_fm">additional half-tone</label>
+                </div>
+                <div class="col-sm-1">
+                    <input class="form-control" id="param_fm" type="number" name="" value="0.0" min="0.0" max="10.0" step="0.1">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">
+                    <label for="param_u">voiced/unvoiced threshold</label>
+                </div>
+                <div class="col-sm-1">
+                    <input class="form-control" id="param_u" type="number" name="" value="0.5" min="0.0" max="1.0" step="0.1">
+                </div>
+                <div class="col-sm-3">
+                    <label for="param_jm">weight of GV for spectrum</label>
+                </div>
+                <div class="col-sm-1">
+                    <input class="form-control" id="param_jm" type="number" name="" value="1.0" min="0.0" max="10.0" step="0.1">
+                </div>
+                <div class="col-sm-3">
+                    <label for="param_jf">weight of GV for log F0</label>
+                </div>
+                <div class="col-sm-1">
+                    <input class="form-control" id="param_jf" type="number" name="" value="1.0" min="0.0" max="10.0" step="0.1">
+                </div>
+            </div>
+            <div class="row">
+                <button id="send" type="button" class="btn btn-primary">テスト実行</button>
+            </div>
+        </form>
+    </div>
+    <div class="row">
+        <pre id="result" class="result"></pre>
+    </div>
+    <br>
+    <hr>
+    <div class="row">
+        <pre>
+          options:                                                                   [  def][ min-- max]
+            -x  dir        : dictionary directory                                    [  N/A]
+            -m  htsvoice   : HTS voice files                                         [  N/A]
+            -ow s          : filename of output wav audio (generated speech)         [  N/A]
+            -ot s          : filename of output trace information                    [  N/A]
+            -s  i          : sampling frequency                                      [ auto][   1--    ]
+            -p  i          : frame period (point)                                    [ auto][   1--    ]
+            -a  f          : all-pass constant                                       [ auto][ 0.0-- 1.0]
+            -b  f          : postfiltering coefficient                               [  0.0][ 0.0-- 1.0]
+            -r  f          : speech speed rate                                       [  1.0][ 0.0--    ]
+            -fm f          : additional half-tone                                    [  0.0][    --    ]
+            -u  f          : voiced/unvoiced threshold                               [  0.5][ 0.0-- 1.0]
+            -jm f          : weight of GV for spectrum                               [  1.0][ 0.0--    ]
+            -jf f          : weight of GV for log F0                                 [  1.0][ 0.0--    ]
+            -z  i          : audio buffer size (if i==0, turn off)                   [    0][   0--    ]
+        </pre>
+    </div>
+
+    <script type="text/javascript">
+            $('#send').on('click',function(){
+                $.ajax({
+                    url:'/voice_ctrl',
+                    type:'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        message: $('#message').val(),
+                        param_s: $('#param_s').val(),
+                        param_p: $('#param_p').val(),
+                        param_a: $('#param_a').val(),
+                        param_b: $('#param_b').val(),
+                        param_r: $('#param_r').val(),
+                        param_fm: $('#param_fm').val(),
+                        param_u: $('#param_u').val(),
+                        param_jm: $('#param_jm').val(),
+                        param_jf: $('#param_jf').val()
+                    })
+                })
+                .done( (data) => {
+                    $('#result').text(data.result);
+                    console.log(data.result);
+                })
+                .fail( (data) => {
+                    $('#result').text(data.result);
+                    console.log(data);
+                })
+            });
+
+    </script>
+</div>
+
+</body>
+</html>
+
