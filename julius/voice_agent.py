@@ -46,25 +46,45 @@ def process(elem):
     ここでいろいろ処理する。
     もうちょっと真面目にデータ構造を考えたほうがいい。
     構文解釈してデータ作ってタスク処理するとか。
+    考えるの面倒だから機械学習でも使うか。
     :param elem: juliusから来たRECOGOUTタグの中身
     :return:
     """
-    continue_flag = 0
+    score = 1.0
+    threshold = 0.5  # この閾値を下回ると無視する
+    sentence = ''
     for whypo in elem.findall('./SHYPO/WHYPO'):
         word = whypo.get('WORD')
         cm = float(whypo.get('CM'))
-        if cm < 0.9:
-            # 認識率悪い時は無視
+        score *= cm
+        sentence += word
+
+    if score < threshold:
+        # リーザというのはうちの嫁が適当に名付けたエージェント名。
+        if u'リーザ' in sentence: 
+            # 認識率が悪い時
             say(u'なんかいった？')
-            return
-        if word == u'ハロー':
-            continue_flag = 1
-        if word == u'ナビ' and continue_flag == 1:
-            say(u'ハロー！')
-        if word == u'今':
-            continue_flag = 2
-        if word == u'何時' and continue_flag == 2:
-            say_time()
+        return
+
+    print score
+    if u'ハローリーザ' in sentence:
+        say(u'ハロー！')
+    if u'今何時' in sentence:
+        say_time()
+    if u'テレビ' in sentence:
+        if u'つけて' in sentence:
+            subprocess.call('irsend SEND_ONCE sharptv key_power'.split())
+            say(u'テレビをつけます')
+        if u'消して' in sentence:
+            subprocess.call('irsend SEND_ONCE sharptv key_power'.split())
+            say(u'テレビを消します')
+    if u'音量' in sentence:
+        if u'上げて' in sentence:
+            subprocess.call('irsend SEND_ONCE sharptv volume_up'.split())
+            say(u'音量上げます')
+        if u'下げて' in sentence:
+            subprocess.call('irsend SEND_ONCE sharptv volume_down'.split())
+            say(u'音量下げます')
 
 
 def wait_for_message(client):
@@ -96,7 +116,7 @@ def connect_julius():
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.connect((host, port))
-            say(u'Juliusと接続しました')
+            say(u'音声認識できます')
             return client
         except socket.error:
             print "can not get connection. try reconnect."
@@ -110,7 +130,7 @@ def main():
         try:
             wait_for_message(client)
         except socket.error:
-            say(u'Juliusとの接続が切れました')
+            say(u'音声認識がきれました')
             print "server socket closed. try reconnect."
             client = connect_julius()
         except KeyboardInterrupt:
