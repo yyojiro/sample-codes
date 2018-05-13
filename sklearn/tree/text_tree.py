@@ -32,8 +32,8 @@ train_target = data[:, 0:1].ravel()
 train_data = data[:, 1:].ravel()
 
 # テキストをベクトル化する
-vectorizer = TfidfVectorizer(ngram_range=(1, 2),
-                             use_idf=False,
+vectorizer = TfidfVectorizer(ngram_range=(1, 1),
+                             use_idf=True,
                              tokenizer = my_tokenizer)
 # 決定木
 clf = tree.DecisionTreeClassifier(max_depth=4,
@@ -48,8 +48,16 @@ pipeline.fit(train_data, train_target)
 # 実験
 predicted = pipeline.predict([u'テレビつけてちょ',
                               u'テレビけして',
-                              u'さいなら'])
+                              u'テレビください'])
 print predicted
+print "---"
+feature_names = map(lambda x: x.encode('utf-8'), pipeline.named_steps['vect'].get_feature_names())
+test_vec = pipeline.named_steps['vect'].transform([u'テレビください'])
+i = 0
+for idx in test_vec.indices:
+    print "%s, %f " % (feature_names[idx],test_vec.data[i])
+    i = i + 1
+print "---"
 
 # 正答率
 predicted = pipeline.predict(train_data)

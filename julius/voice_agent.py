@@ -21,7 +21,18 @@ from xml.etree.ElementTree import *
 import subprocess
 import datetime
 import time
+import logging
+from logging.handlers import TimedRotatingFileHandler
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = TimedRotatingFileHandler('/var/log/vagent.log', when="s", interval=1, backupCount=3)
+handler.setFormatter(logging.Formatter('[%(asctime)s][%(levelname)s] %(message)s'))
+logger.addHandler(handler)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s'))
+logger.addHandler(console_handler)
+logger.debug('start')
 
 def say(message):
     """
@@ -66,7 +77,7 @@ def process(elem):
             say(u'なんかいった？')
         return
 
-    print score
+    logger.info("score %f" % score)
     if u'ハローリーザ' in sentence:
         say(u'ハロー！')
     if u'今何時' in sentence:
@@ -85,27 +96,33 @@ def process(elem):
         if u'下げて' in sentence:
             subprocess.call('irsend SEND_ONCE sharptv volume_down'.split())
             say(u'音量下げます')
+    if u'IP教えて' in sentence:
+        ipaddr = subprocess.check_output("ifconfig wlan0 | grep 'inet ' | awk '{print $2}'", shell=True)
+        say(u'%sです' % ipaddr)
 
 
 def wait_for_message(client):
     data = ''
     while True:
         # RECOGOUTタグが認識した結果を意味する
-        if '</RECOGOUT>\n.' in data:
-            print data
-            # \n.が区切りになっているので、splitで切って必要な分にする
-            elem = fromstring('<?xml version="1.0"?>\n' + data[data.find('<RECOGOUT>'):].split('\n.')[0])
-            # 処理する
-            process(elem)
-            # リセット
-            data = ''
-        else:
-            byte_data = client.recv(1024)
-            if byte_data == '':
-                # 相手が切れるとrecvから0byteが返ってくるので、ここで例外にする
-                raise socket.error()
-            data += str(byte_data)
-            print('wait')
+        try:
+            if '</RECOGOUT>\n.' in data:
+                logger.info(data)
+                # \n.が区切りになっているので、splitで切って必要な分にする
+                elem = fromstring('<?xml version="1.0"?>\n' + data[data.find('<RECOGOUT>'):].split('\n.')[0])
+                # 処理する
+                process(elem)
+                # リセット
+                data = ''
+            else:
+                byte_data = client.recv(1024)
+                if byte_data == '':
+                    # 相手が切れるとrecvから0byteが返ってくるので、ここで例外にする
+                    raise socket.error()
+                data += str(byte_data)
+                logger.debug('wait')
+        except ParseError:
+            logger.error(ParseError)
 
 
 def connect_julius():
@@ -119,7 +136,7 @@ def connect_julius():
             say(u'音声認識できます')
             return client
         except socket.error:
-            print "can not get connection. try reconnect."
+            logger.error("can not get connection. try reconnect.")
             time.sleep(3)
 
 
@@ -131,7 +148,7 @@ def main():
             wait_for_message(client)
         except socket.error:
             say(u'音声認識がきれました')
-            print "server socket closed. try reconnect."
+            logger.warning("server socket closed. try reconnect.")
             client = connect_julius()
         except KeyboardInterrupt:
             client.close()
