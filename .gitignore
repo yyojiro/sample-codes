@@ -8,3 +8,4 @@ secret.*
 *.flac
 *.avi
 *.xml
+keras/model

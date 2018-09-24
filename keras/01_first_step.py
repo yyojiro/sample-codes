@@ -8,10 +8,12 @@ from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.optimizers import RMSprop
+import os
 
 batch_size = 128
 num_classes = 10
-epochs = 20
+epochs = 10
+model_dir = './model'
 
 # データ読み込み
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -48,6 +50,10 @@ history = model.fit(x_train, y_train,
                     epochs=epochs,
                     verbose=1,
                     validation_data=(x_test, y_test))
+
+# 保存
+open(os.path.join(model_dir,'test_model.json'), 'w').write(model.to_json())
+model.save_weights(os.path.join(model_dir, 'test_model_weights.hdf5'))
 
 # 評価
 score = model.evaluate(x_test, y_test, verbose=0)
