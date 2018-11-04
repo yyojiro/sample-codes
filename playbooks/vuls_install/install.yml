@@ -1,0 +1,103 @@
+---
+- name: vuls installer
+  hosts: vuls_server
+  gather_facts: no
+  become: True
+  tasks:
+    - name: setup vuls user
+      user:
+        name: vuls
+        generate_ssh_key: yes
+        ssh_key_bits: 2048
+        ssh_key_file: .ssh/id_rsa
+
+    - name: add sudoers
+      copy:
+        src: sudoers
+        dest: /etc/sudoers.d/vuls
+
+    - name: install require packages
+      yum:
+        name: "{{ packages }}"
+      vars:
+        packages:
+        - sqlite
+        - git
+        - gcc
+        - make
+        - wget
+        - yum-utils
+
+    - name: install golang
+      unarchive:
+        src: https://dl.google.com/go/go1.10.1.linux-amd64.tar.gz
+        dest: /usr/local/
+        remote_src: yes
+
+    - name: set env
+      copy:
+        src: goenv.sh
+        dest: /etc/profile.d/goenv.sh
+        mode: 0755
+
+    - name: make directory
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: 0755
+        owner: vuls
+        group: vuls
+      with_items:
+        - /home/vuls/go
+        - /var/log/vuls
+        - /var/log/gost
+        - /home/vuls/go/src/github.com/kotakanbe
+        - /home/vuls/go/src/github.com/knqyf263
+        - /home/vuls/go/src/github.com/future-architect
+
+    - name: git clone
+      git:
+        repo: "{{ item.repo }}"
+        dest: "{{ item.dest }}"
+      with_items:
+        - { repo: "https://github.com/kotakanbe/go-cve-dictionary.git", dest: /home/vuls/go/src/github.com/kotakanbe/go-cve-dictionary }
+        - { repo: "https://github.com/kotakanbe/goval-dictionary.git", dest: /home/vuls/go/src/github.com/kotakanbe/goval-dictionary }
+        - { repo: "https://github.com/knqyf263/gost.git", dest: /home/vuls/go/src/github.com/knqyf263/gost }
+        - { repo: "https://github.com/future-architect/vuls.git", dest: /home/vuls/go/src/github.com/future-architect/vuls }
+      become_user: vuls
+
+    - name: make install
+      make:
+        chdir: "{{ item }}"
+        target: install
+      with_items:
+        - /home/vuls/go/src/github.com/kotakanbe/go-cve-dictionary
+        - /home/vuls/go/src/github.com/kotakanbe/goval-dictionary
+        - /home/vuls/go/src/github.com/knqyf263/gost
+        - /home/vuls/go/src/github.com/future-architect/vuls
+      environment:
+        GOROOT: /usr/local/go
+        GOPATH: /home/vuls/go
+        PATH: "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/vuls/.local/bin:/home/vuls/bin:/usr/local/go/bin:/home/vuls/go/bin"
+      become_user: vuls
+
+    - name: get cve data
+      shell: source /etc/profile.d/goenv.sh; for i in `seq 2002 $(date +"%Y")`; do go-cve-dictionary fetchnvd -years $i; done
+      become_user: vuls
+      args:
+        chdir: /home/vuls
+        creates: /home/vuls/cve.sqlite3
+
+    - name: get oval data
+      shell: goval-dictionary fetch-redhat 7
+      become_user: vuls
+      args:
+        chdir: /home/vuls
+        creates: /home/vuls/oval.sqlite3
+
+    - name: get gost data
+      shell: gost fetch redhat --after 2016-01-01
+      become_user: vuls
+      args:
+        chdir: /home/vuls
+        creates: /home/vuls/gost.sqlite3
