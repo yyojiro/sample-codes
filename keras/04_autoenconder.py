@@ -19,13 +19,10 @@ model_dir = './model'
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
 # ニューラルネットにぶち込むために成形
-# MINSTの画像は28*28の配列に0-254の数値の入ったデータ
+# MNISTの画像は28*28の配列に0-254の数値の入ったデータ
 x_train = x_train.reshape(60000, 28*28)
-x_test = x_test.reshape(10000, 28*28)
 x_train = x_train.astype('float32')
-x_test = x_test.astype('float32')
 x_train /= 255
-x_test /= 255
 
 # エンコーダ
 encoder = Sequential()

@@ -6,7 +6,6 @@
 
 from PIL import Image
 import sys
-import pyocr
 import pyocr.builders
 import cv2
 
@@ -22,7 +21,7 @@ print(u"OCRツール名: %s" % (tool.get_name()))
 builder = pyocr.builders.TextBuilder()
 # なんかtesseract_flagsがデフォルトで['-psm', '3']ってなっててエラーになる。
 # バグだと思うのでここで補正する。
-print builder.tesseract_flags
+print(builder.tesseract_flags)
 builder.tesseract_flags = '--psm 3'.split()
 builder.tesseract_configs = []
 
@@ -34,9 +33,9 @@ print(txt)
 
 # 枠で囲ってみる
 boxbuilder = pyocr.builders.WordBoxBuilder()
-print boxbuilder.file_extensions
-print boxbuilder.tesseract_flags
-print boxbuilder.tesseract_configs
+print (boxbuilder.file_extensions)
+print (boxbuilder.tesseract_flags)
+print (boxbuilder.tesseract_configs)
 
 boxbuilder.tesseract_flags = '--psm 3'.split()
 result = tool.image_to_string(Image.open("test1.png"),
